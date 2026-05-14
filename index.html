@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Рабочий Календарь</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f0f2f5;--card:#fff;--card2:#f5f6f8;--border:#e0e0e0;
+  --text:#1a1a1a;--text2:#888;
+  --green:#1D9E75;--green-bg:rgba(29,158,117,0.11);
+  --amber:#BA7517;--blue:#185FA5;--blue-bg:rgba(24,95,165,0.09);
+  --red:#c0392b;--red-bg:rgba(192,57,43,0.09);
+  --r:14px;--rs:8px;
+}
+[data-theme="dark"]{
+  --bg:#18191c;--card:#242529;--card2:#2e3035;--border:#38393e;
+  --text:#f0f0f0;--text2:#888;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .25s,color .25s}
+.app{max-width:430px;margin:0 auto;padding:10px 10px 32px}
+
+/* TABS */
+.tabs{display:flex;background:var(--card);border-radius:var(--r);padding:4px;margin-bottom:12px;gap:4px;border:0.5px solid var(--border)}
+.tab{flex:1;padding:8px 4px;border:none;background:none;border-radius:10px;cursor:pointer;font-size:12px;color:var(--text2);transition:all .18s}
+.tab.active{background:var(--green);color:#fff;font-weight:600}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;border:0.5px solid var(--border)}
+.card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--card2);border-radius:var(--rs);padding:11px;text-align:center}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:3px}
+.stat-value{font-size:17px;font-weight:600}
+.green{color:var(--green)}.amber{color:var(--amber)}.blue{color:var(--blue)}
+.rate-row{grid-column:1/-1;background:var(--blue-bg);border-radius:var(--rs);padding:11px;display:flex;align-items:center;justify-content:space-between}
+.rate-label{font-size:13px;color:var(--blue);font-weight:500}
+.rate-val{font-size:19px;font-weight:700;color:var(--blue)}
+
+/* GOAL */
+.goal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px}
+.progress-track{height:8px;background:var(--card2);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:4px;transition:width .4s}
+.progress-info{display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--text2)}
+.row{display:flex;gap:8px;margin-top:10px;align-items:center}
+.row input,.row select{border:0.5px solid var(--border);border-radius:var(--rs);padding:7px 10px;background:var(--card2);color:var(--text);font-size:13px}
+.row input{flex:1}
+.btn-sm{border:0.5px solid var(--border);background:none;border-radius:var(--rs);padding:7px 13px;cursor:pointer;color:var(--text);font-size:13px;white-space:nowrap}
+.btn-sm:hover{background:var(--card2)}
+
+/* CALENDAR */
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.month-nav button{background:none;border:0.5px solid var(--border);border-radius:var(--rs);padding:6px 14px;cursor:pointer;color:var(--text);font-size:14px}
+.month-title{font-size:16px;font-weight:600}
+.weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--text2);margin-bottom:5px}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:var(--rs);font-size:12px;cursor:pointer;border:1.5px solid transparent;gap:2px;transition:background .15s}
+.day:hover{background:var(--card2)}.day.empty{cursor:default}
+.day.today{border-color:var(--blue)}
+.day.has-data{background:var(--green-bg)}
+.day.has-data .dn{color:#0a6b4a;font-weight:600}
+.day.selected{border-color:var(--green)}
+.day-dot{width:4px;height:4px;border-radius:50%;background:var(--green)}
+
+/* FORM */
+.form-title{font-size:15px;font-weight:600;margin-bottom:14px}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
+.field textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 11px;background:var(--card2);color:var(--text);font-size:14px;resize:none;height:52px;font-family:inherit}
+.totals-bar{background:var(--blue-bg);border-radius:var(--rs);padding:9px 12px;font-size:12px;color:var(--blue);font-weight:500;margin-bottom:10px;min-height:34px}
+
+/* SOURCE BLOCK */
+.src-block{background:var(--card2);border-radius:var(--rs);padding:11px;margin-bottom:8px;border:0.5px solid var(--border);position:relative}
+.src-block-header{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.src-name-input{flex:1;border:0.5px solid var(--border);border-radius:6px;padding:6px 9px;background:var(--card);color:var(--text);font-size:13px;font-weight:500}
+.src-del{border:0.5px solid var(--border);background:none;border-radius:6px;padding:5px 8px;cursor:pointer;color:var(--red);font-size:13px;line-height:1}
+.src-del:hover{background:var(--red-bg)}
+.src-fields{display:grid;grid-template-columns:1fr 80px 58px;gap:6px;align-items:center}
+.src-fields label{font-size:11px;color:var(--text2);display:block;margin-bottom:3px}
+.src-fields input,.src-fields select{width:100%;border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;background:var(--card);color:var(--text);font-size:13px}
+.src-rate{font-size:11px;color:var(--blue);margin-top:5px;min-height:14px}
+
+.add-source{width:100%;border:0.5px dashed var(--green);background:none;border-radius:var(--rs);padding:9px;cursor:pointer;color:var(--green);font-size:13px;margin-bottom:10px}
+.add-source:hover{background:var(--green-bg)}
+
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.btn-save{background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:11px;font-size:14px;cursor:pointer;font-weight:600}
+.btn-save:hover{background:#0f6b50}
+.btn-del{background:none;border:0.5px solid var(--red);color:var(--red);border-radius:var(--rs);padding:11px;font-size:14px;cursor:pointer}
+.btn-del:hover{background:var(--red-bg)}
+
+/* LIST */
+.day-row{display:flex;justify-content:space-between;align-items:flex-start;padding:9px 0;border-bottom:0.5px solid var(--border);font-size:13px}
+.day-row:last-child{border-bottom:none}
+.day-date{color:var(--text2);font-size:12px}
+.day-srcs{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.5}
+.day-earn{font-weight:600;color:var(--green)}
+.day-sub{font-size:11px;color:var(--text2);text-align:right;margin-top:2px}
+
+/* SETTINGS */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:0.5px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:14px}
+.setting-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tog-sl{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.2s}
+.tog-sl::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.tog-sl{background:var(--green)}
+.toggle input:checked+.tog-sl::before{transform:translateX(20px)}
+.cur-sel{border:0.5px solid var(--border);border-radius:var(--rs);padding:6px 10px;background:var(--card2);color:var(--text);font-size:14px;cursor:pointer}
+.num-input{width:80px;border:0.5px solid var(--border);border-radius:var(--rs);padding:6px 10px;background:var(--card2);color:var(--text);font-size:14px;text-align:right}
+
+.no-sel{text-align:center;color:var(--text2);font-size:13px;padding:22px 0}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('calendar')" id="tab-calendar">&#128197; Календарь</button>
+  <button class="tab" onclick="showTab('stats')" id="tab-stats">&#128200; Итоги</button>
+  <button class="tab" onclick="showTab('settings')" id="tab-settings">&#9881; Настройки</button>
+</div>
+
+<!-- ═══ CALENDAR ═══ -->
+<div id="tab-calendar-content">
+
+  <div class="card">
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">&#8249;</button>
+      <span class="month-title" id="monthTitle"></span>
+      <button onclick="changeMonth(1)">&#8250;</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label">Дней</div><div class="stat-value" id="statDays">0</div></div>
+      <div class="stat"><div class="stat-label">Часов</div><div class="stat-value" id="statHours">0</div></div>
+      <div class="stat"><div class="stat-label">Заработано</div><div class="stat-value green" id="statEarned">0</div></div>
+      <div class="stat"><div class="stat-label">Среднее/день</div><div class="stat-value amber" id="statAvg">0</div></div>
+      <div class="rate-row">
+        <span class="rate-label">&#9200; Средняя ставка</span>
+        <span class="rate-val" id="statRate">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="goal-header">
+      <span style="color:var(--text2)">&#127919; Цель на месяц</span>
+      <span style="font-weight:600" id="goalDisplay">90 000 ₽</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-info"><span id="progressPct">0%</span><span id="progressLeft"></span></div>
+    <div class="row">
+      <input type="number" id="goalInput" placeholder="Сумма цели">
+      <select id="goalCurrency" style="border:0.5px solid var(--border);border-radius:var(--rs);padding:7px 8px;background:var(--card2);color:var(--text);font-size:13px;cursor:pointer">
+        <option value="RUB">₽</option><option value="USD">$</option><option value="EUR">€</option>
+      </select>
+      <button class="btn-sm" onclick="setGoal()">Сохранить</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="weekdays"><div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div></div>
+    <div class="days-grid" id="daysGrid"></div>
+  </div>
+
+  <div id="entrySection">
+    <div class="card"><div class="no-sel">&#128070; Нажми на день чтобы внести смену</div></div>
+  </div>
+</div>
+
+<!-- ═══ STATS ═══ -->
+<div id="tab-stats-content" class="hidden">
+  <div class="card">
+    <div class="card-title">Все записи за месяц</div>
+    <div id="daysList"><div class="no-sel">Нет записей</div></div>
+  </div>
+</div>
+
+<!-- ═══ SETTINGS ═══ -->
+<div id="tab-settings-content" class="hidden">
+  <div class="card">
+    <div class="card-title">Внешний вид</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Тёмная тема</div><div class="setting-sub">Переключить оформление</div></div>
+      <label class="toggle"><input type="checkbox" id="darkToggle" onchange="toggleTheme()"><span class="tog-sl"></span></label>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Валюта по умолчанию</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Для новых источников дохода</div></div>
+      <select class="cur-sel" id="defaultCurrency" onchange="saveSettings()">
+        <option value="RUB">₽ Рубль</option>
+        <option value="USD">$ Доллар</option>
+        <option value="EUR">€ Евро</option>
+      </select>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Курсы валют (итоги в ₽)</div>
+    <div class="setting-row">
+      <div><div class="setting-label">1 USD = ? ₽</div></div>
+      <input class="num-input" type="number" id="rateUSD" value="90" onchange="saveSettings()">
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">1 EUR = ? ₽</div></div>
+      <input class="num-input" type="number" id="rateEUR" value="100" onchange="saveSettings()">
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title">Данные</div>
+    <div class="setting-row">
+      <div><div class="setting-label">Сбросить всё</div><div class="setting-sub">Удалить все записи</div></div>
+      <button class="btn-sm" style="border-color:var(--red);color:var(--red)" onclick="clearAll()">Удалить</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+<script>
+if(window.Telegram?.WebApp){Telegram.WebApp.ready();Telegram.WebApp.expand();}
+
+const MONTHS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const SYM={RUB:'₽',USD:'$',EUR:'€'};
+
+let cur=new Date();cur.setDate(1);
+let selDay=null;
+let data  =JSON.parse(localStorage.getItem('wData') ||'{}');
+let goals =JSON.parse(localStorage.getItem('wGoals')||'{}');
+let cfg   =JSON.parse(localStorage.getItem('wCfg')  ||'{"dark":false,"defCur":"RUB","usd":90,"eur":100}');
+
+function save(){
+  localStorage.setItem('wData',  JSON.stringify(data));
+  localStorage.setItem('wGoals', JSON.stringify(goals));
+  localStorage.setItem('wCfg',   JSON.stringify(cfg));
+}
+
+/* ── валюта ── */
+function toRUB(a,c){
+  if(c==='USD')return a*(cfg.usd||90);
+  if(c==='EUR')return a*(cfg.eur||100);
+  return a;
+}
+function fmtRUB(n){return'₽'+Math.round(n).toLocaleString('ru-RU')}
+function fmtAmt(a,c){return(SYM[c]||'₽')+Math.round(a).toLocaleString('ru-RU')}
+
+/* ── ключи ── */
+function dKey(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+function mKey(y,m){return`${y}-${m}`}
+
+/* ── цель ── */
+function getGoal(){return goals[mKey(cur.getFullYear(),cur.getMonth())]||{amount:90000,currency:'RUB'}}
+function setGoal(){
+  const v=parseFloat(document.getElementById('goalInput').value);
+  if(!v||v<=0)return;
+  goals[mKey(cur.getFullYear(),cur.getMonth())]={amount:v,currency:document.getElementById('goalCurrency').value};
+  save();document.getElementById('goalInput').value='';renderStats();
+}
+
+/* ── настройки ── */
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',cfg.dark?'dark':'light');
+  document.getElementById('darkToggle').checked=!!cfg.dark;
+}
+function toggleTheme(){cfg.dark=document.getElementById('darkToggle').checked;save();applyTheme();}
+function saveSettings(){
+  cfg.defCur=document.getElementById('defaultCurrency').value;
+  cfg.usd=parseFloat(document.getElementById('rateUSD').value)||90;
+  cfg.eur=parseFloat(document.getElementById('rateEUR').value)||100;
+  save();renderStats();
+}
+function loadSettings(){
+  applyTheme();
+  document.getElementById('defaultCurrency').value=cfg.defCur||'RUB';
+  document.getElementById('rateUSD').value=cfg.usd||90;
+  document.getElementById('rateEUR').value=cfg.eur||100;
+}
+function clearAll(){
+  if(!confirm('Удалить все данные?'))return;
+  data={};goals={};save();selDay=null;
+  document.getElementById('entrySection').innerHTML='<div class="card"><div class="no-sel">&#128070; Нажми на день чтобы внести смену</div></div>';
+  renderCalendar();renderStats();
+}
+
+/* ── вкладки ── */
+function showTab(n){
+  ['calendar','stats','settings'].forEach(t=>{
+    document.getElementById('tab-'+t+'-content').classList.toggle('hidden',t!==n);
+    document.getElementById('tab-'+t).classList.toggle('active',t===n);
+  });
+  if(n==='stats')renderList();
+}
+
+/* ── агрегация дня ──
+   Каждый источник: { name, hours, amount, currency }
+   hours — необязательный, может быть '' или 0
+*/
+function dayTotals(d){
+  const srcs=d.sources||[];
+  let totalH=0,totalRUB=0;
+  srcs.forEach(s=>{
+    totalH+=parseFloat(s.hours||0);
+    totalRUB+=toRUB(parseFloat(s.amount||0),s.currency);
+  });
+  return{totalH,totalRUB};
+}
+
+/* ── статистика ── */
+function renderStats(){
+  const y=cur.getFullYear(),m=cur.getMonth();
+  const prefix=`${y}-${String(m+1).padStart(2,'0')}`;
+  const keys=Object.keys(data).filter(k=>k.startsWith(prefix));
+  let sumH=0,sumRUB=0,cnt=0;
+  keys.forEach(k=>{
+    const t=dayTotals(data[k]);
+    sumH+=t.totalH;sumRUB+=t.totalRUB;
+    if(t.totalH>0||t.totalRUB>0)cnt++;
+  });
+  document.getElementById('statDays').textContent=cnt;
+  document.getElementById('statHours').textContent=sumH%1===0?sumH:sumH.toFixed(1);
+  document.getElementById('statEarned').textContent=fmtRUB(sumRUB);
+  document.getElementById('statAvg').textContent=cnt>0?fmtRUB(sumRUB/cnt):'0';
+  document.getElementById('statRate').textContent=sumH>0?fmtRUB(sumRUB/sumH)+'/ч':'—';
+  const goal=getGoal(),goalRUB=toRUB(goal.amount,goal.currency);
+  document.getElementById('goalDisplay').textContent=fmtAmt(goal.amount,goal.currency);
+  const pct=Math.min(100,Math.round(sumRUB/goalRUB*100));
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressPct').textContent=pct+'%';
+  const left=Math.max(0,goalRUB-sumRUB);
+  document.getElementById('progressLeft').textContent=left>0?'Осталось: '+fmtRUB(left):'🎉 Цель!';
+}
+
+/* ── список итогов ── */
+function renderList(){
+  const y=cur.getFullYear(),m=cur.getMonth();
+  const prefix=`${y}-${String(m+1).padStart(2,'0')}`;
+  const keys=Object.keys(data).filter(k=>k.startsWith(prefix)).sort();
+  const el=document.getElementById('daysList');
+  if(!keys.length){el.innerHTML='<div class="no-sel">Нет записей</div>';return;}
+  el.innerHTML=keys.map(k=>{
+    const d=data[k];
+    const{totalH,totalRUB}=dayTotals(d);
+    const ds=k.split('-').slice(1).reverse().join('.');
+    const rate=totalH>0&&totalRUB>0?' · '+fmtRUB(totalRUB/totalH)+'/ч':'';
+    const srcsStr=(d.sources||[]).filter(s=>parseFloat(s.amount)>0).map(s=>{
+      const h=parseFloat(s.hours||0);
+      const name=s.name||'Доход';
+      const hStr=h>0?` ${h}ч`:'';
+      return`${name}${hStr}: ${fmtAmt(s.amount,s.currency)}`;
+    }).join(' · ');
+    return`<div class="day-row">
+      <div>
+        <div class="day-date">${ds} ${totalH>0?'· '+totalH+'ч':''}</div>
+        <div class="day-srcs">${srcsStr}</div>
+        ${d.note?`<div class="day-srcs" style="color:var(--text2)">${d.note}</div>`:''}
+      </div>
+      <div>
+        <div class="day-earn">${fmtRUB(totalRUB)}</div>
+        <div class="day-sub">${rate.trim()}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── календарь ── */
+function renderCalendar(){
+  const y=cur.getFullYear(),m=cur.getMonth();
+  document.getElementById('monthTitle').textContent=`${MONTHS[m]} ${y}`;
+  const grid=document.getElementById('daysGrid');grid.innerHTML='';
+  const first=new Date(y,m,1).getDay(),offset=(first===0)?6:first-1;
+  const days=new Date(y,m+1,0).getDate(),today=new Date();
+  for(let i=0;i<offset;i++){const e=document.createElement('div');e.className='day empty';grid.appendChild(e);}
+  for(let d=1;d<=days;d++){
+    const k=dKey(y,m,d),el=document.createElement('div');el.className='day';
+    if(today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d)el.classList.add('today');
+    const t=data[k]?dayTotals(data[k]):{totalH:0,totalRUB:0};
+    if(t.totalH>0||t.totalRUB>0)el.classList.add('has-data');
+    if(selDay===d)el.classList.add('selected');
+    el.innerHTML=`<span class="dn">${d}</span>${(t.totalH>0||t.totalRUB>0)?'<span class="day-dot"></span>':''}`;
+    el.onclick=(()=>{const dd=d;return()=>selectDay(dd);})();
+    grid.appendChild(el);
+  }
+}
+
+/* ── форма дня ── */
+// window._srcs: [{name, hours, amount, currency}, ...]
+
+function selectDay(d){
+  selDay=d;renderCalendar();
+  const y=cur.getFullYear(),m=cur.getMonth(),k=dKey(y,m,d);
+  const saved=JSON.parse(JSON.stringify(data[k]||{sources:[],note:''}));
+  if(!saved.sources||!saved.sources.length)
+    saved.sources=[{name:'',hours:'',amount:'',currency:cfg.defCur||'RUB'}];
+  window._srcs=saved.sources;
+
+  document.getElementById('entrySection').innerHTML=`
+    <div class="card">
+      <div class="form-title">&#128197; ${d} ${MONTHS[m]} ${y}</div>
+
+      <div class="totals-bar" id="totalsBar">Введи данные ниже</div>
+
+      <div id="srcList"></div>
+      <button class="add-source" onclick="addSrc()">+ Добавить источник дохода</button>
+
+      <div class="field">
+        <label>Заметка (необязательно)</label>
+        <textarea id="fNote" placeholder="например: переработка, командировка...">${saved.note||''}</textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn-save" onclick="saveEntry('${k}')">&#10003; Сохранить</button>
+        <button class="btn-del" onclick="delEntry('${k}')">&#10005; Удалить</button>
+      </div>
+    </div>`;
+  renderSrcs();
+}
+
+function renderSrcs(){
+  const list=document.getElementById('srcList');
+  if(!list)return;
+
+  list.innerHTML=window._srcs.map((s,i)=>`
+    <div class="src-block" id="sb${i}">
+      <div class="src-block-header">
+        <input class="src-name-input" type="text" placeholder="Название источника (напр. Основная работа)"
+          value="${s.name||''}" oninput="updSrc(${i},'name',this.value)">
+        ${window._srcs.length>1
+          ?`<button class="src-del" onclick="rmSrc(${i})">&#215;</button>`
+          :''}
+      </div>
+      <div class="src-fields">
+        <div>
+          <label>Часов (необязательно)</label>
+          <input type="number" step="0.5" min="0" max="24" placeholder="—"
+            value="${s.hours||''}" oninput="updSrc(${i},'hours',this.value)">
+        </div>
+        <div>
+          <label>Сумма</label>
+          <input type="number" min="0" placeholder="0"
+            value="${s.amount||''}" oninput="updSrc(${i},'amount',this.value)">
+        </div>
+        <div>
+          <label>Валюта</label>
+          <select onchange="updSrc(${i},'currency',this.value)">
+            ${['RUB','USD','EUR'].map(c=>`<option value="${c}"${s.currency===c?' selected':''}>${SYM[c]}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="src-rate" id="sr${i}"></div>
+    </div>`).join('');
+
+  calcTotals();
+}
+
+function updSrc(i,f,v){
+  window._srcs[i][f]=v;
+  // обновить подсказку ставки конкретного источника
+  const h=parseFloat(window._srcs[i].hours||0);
+  const rub=toRUB(parseFloat(window._srcs[i].amount||0),window._srcs[i].currency);
+  const el=document.getElementById('sr'+i);
+  if(el){
+    if(h>0&&rub>0)el.textContent=`Ставка: ${fmtRUB(rub/h)}/ч`;
+    else el.textContent='';
+  }
+  calcTotals();
+}
+
+function addSrc(){
+  window._srcs.push({name:'',hours:'',amount:'',currency:cfg.defCur||'RUB'});
+  renderSrcs();
+}
+function rmSrc(i){
+  window._srcs.splice(i,1);
+  renderSrcs();
+}
+
+function calcTotals(){
+  let totalH=0,totalRUB=0;
+  window._srcs.forEach(s=>{
+    totalH+=parseFloat(s.hours||0);
+    totalRUB+=toRUB(parseFloat(s.amount||0),s.currency);
+  });
+  const bar=document.getElementById('totalsBar');
+  if(!bar)return;
+  if(totalRUB===0&&totalH===0){bar.textContent='Введи данные ниже';return;}
+  let txt=`Итого: ${fmtRUB(totalRUB)}`;
+  if(totalH>0)txt+=` · ${totalH%1===0?totalH:totalH.toFixed(1)} ч`;
+  if(totalH>0&&totalRUB>0)txt+=` · ${fmtRUB(totalRUB/totalH)}/ч`;
+  bar.textContent=txt;
+}
+
+function saveEntry(k){
+  const srcs=window._srcs
+    .map(s=>({
+      name:s.name||'',
+      hours:parseFloat(s.hours)||0,
+      amount:parseFloat(s.amount)||0,
+      currency:s.currency||'RUB'
+    }))
+    .filter(s=>s.amount>0||s.hours>0);
+  data[k]={sources:srcs,note:document.getElementById('fNote').value.trim()};
+  save();renderCalendar();renderStats();selectDay(selDay);
+}
+
+function delEntry(k){
+  delete data[k];save();renderCalendar();renderStats();selDay=null;
+  document.getElementById('entrySection').innerHTML=
+    '<div class="card"><div class="no-sel">&#128070; Нажми на день чтобы внести смену</div></div>';
+}
+
+function changeMonth(dir){
+  cur.setMonth(cur.getMonth()+dir);selDay=null;
+  document.getElementById('entrySection').innerHTML=
+    '<div class="card"><div class="no-sel">&#128070; Нажми на день чтобы внести смену</div></div>';
+  renderCalendar();renderStats();
+}
+
+/* ── старт ── */
+loadSettings();renderCalendar();renderStats();
+</script>
+</body>
+</html>
