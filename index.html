@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Рабочий Календарь</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+/* ══════════════════════════════════════
+   ТЕМЫ
+══════════════════════════════════════ */
+
+/* Светлая (default) */
+:root{
+  --bg:#f0f2f5;--card:#fff;--card2:#f5f6f8;--border:#e0e0e0;
+  --text:#1a1a1a;--text2:#888;
+  --green:#1D9E75;--green-bg:rgba(29,158,117,0.11);
+  --amber:#BA7517;--blue:#185FA5;--blue-bg:rgba(24,95,165,0.09);
+  --red:#c0392b;--red-bg:rgba(192,57,43,0.09);
+  --r:14px;--rs:8px;
+  --header-bg:transparent;
+  --tab-bg:var(--card);
+}
+
+/* Тёмная */
+[data-theme="dark"]{
+  --bg:#18191c;--card:#242529;--card2:#2e3035;--border:#38393e;
+  --text:#f0f0f0;--text2:#888;
+  --header-bg:transparent;
+  --tab-bg:var(--card);
+}
+
+/* Нежно-розовая */
+[data-theme="pink"]{
+  --bg:linear-gradient(145deg,#ffe4f0 0%,#ffd6e7 40%,#fce4f5 100%);
+  --card:rgba(255,255,255,0.82);--card2:rgba(255,220,235,0.55);
+  --border:#f5c0d8;
+  --text:#3d1a2a;--text2:#b07090;
+  --green:#d45c8a;--green-bg:rgba(212,92,138,0.10);
+  --amber:#c0744a;--blue:#a0508a;--blue-bg:rgba(160,80,138,0.10);
+  --red:#c0392b;--red-bg:rgba(192,57,43,0.09);
+  --header-bg:transparent;
+  --tab-bg:rgba(255,255,255,0.7);
+}
+[data-theme="pink"] .progress-fill{background:var(--green)}
+[data-theme="pink"] .day.has-data{background:rgba(212,92,138,0.13)}
+[data-theme="pink"] .day.has-data .dn{color:#b03070}
+[data-theme="pink"] .day-dot{background:#d45c8a}
+[data-theme="pink"] .rate-row{background:rgba(160,80,138,0.10)}
+[data-theme="pink"] .rate-label,.rate-val{color:#a0508a}
+[data-theme="pink"] .week-icon.has-data{background:#d45c8a}
+[data-theme="pink"] .btn-save{background:#d45c8a}
+[data-theme="pink"] .btn-save:hover{background:#b03070}
+[data-theme="pink"] .add-source{border-color:#d45c8a;color:#d45c8a}
+[data-theme="pink"] .add-source:hover{background:rgba(212,92,138,0.08)}
+[data-theme="pink"] .toggle input:checked+.tog-sl{background:#d45c8a}
+[data-theme="pink"] .tab.active{background:#d45c8a}
+[data-theme="pink"] .day.selected{border-color:#d45c8a}
+[data-theme="pink"] .day.today{border-color:#a0508a}
+[data-theme="pink"] .wday-earn{color:#d45c8a}
+[data-theme="pink"] .week-total-sum{color:#d45c8a}
+[data-theme="pink"] .stat-value.green{color:#d45c8a}
+[data-theme="pink"] .stat-value.amber{color:#c0744a}
+
+/* Нежно-голубая */
+[data-theme="blue"]{
+  --bg:linear-gradient(145deg,#ddf0ff 0%,#cce8ff 40%,#d8f0ff 100%);
+  --card:rgba(255,255,255,0.83);--card2:rgba(210,235,255,0.55);
+  --border:#b0d4f0;
+  --text:#0e2840;--text2:#6090b0;
+  --green:#2980b9;--green-bg:rgba(41,128,185,0.10);
+  --amber:#1a7a6e;--blue:#1560a0;--blue-bg:rgba(21,96,160,0.10);
+  --red:#c0392b;--red-bg:rgba(192,57,43,0.09);
+  --header-bg:transparent;
+  --tab-bg:rgba(255,255,255,0.7);
+}
+[data-theme="blue"] .progress-fill{background:var(--green)}
+[data-theme="blue"] .day.has-data{background:rgba(41,128,185,0.12)}
+[data-theme="blue"] .day.has-data .dn{color:#1560a0}
+[data-theme="blue"] .day-dot{background:#2980b9}
+[data-theme="blue"] .rate-row{background:rgba(21,96,160,0.09)}
+[data-theme="blue"] .rate-label,[data-theme="blue"] .rate-val{color:#1560a0}
+[data-theme="blue"] .week-icon.has-data{background:#2980b9}
+[data-theme="blue"] .btn-save{background:#2980b9}
+[data-theme="blue"] .btn-save:hover{background:#1560a0}
+[data-theme="blue"] .add-source{border-color:#2980b9;color:#2980b9}
+[data-theme="blue"] .add-source:hover{background:rgba(41,128,185,0.08)}
+[data-theme="blue"] .toggle input:checked+.tog-sl{background:#2980b9}
+[data-theme="blue"] .tab.active{background:#2980b9}
+[data-theme="blue"] .day.selected{border-color:#2980b9}
+[data-theme="blue"] .day.today{border-color:#1560a0}
+[data-theme="blue"] .wday-earn{color:#2980b9}
+[data-theme="blue"] .week-total-sum{color:#2980b9}
+[data-theme="blue"] .stat-value.green{color:#2980b9}
+[data-theme="blue"] .stat-value.amber{color:#1a7a6e}
+
+/* Фон body через псевдоэлемент (поддержка gradient) */
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  color:var(--text);min-height:100vh;
+  transition:color .25s;
+  position:relative;
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;z-index:-1;
+  background:var(--bg);
+  transition:background .35s;
+}
+
+.app{max-width:430px;margin:0 auto;padding:0 10px 32px}
+
+/* HEADER */
+.app-header{display:flex;align-items:center;gap:10px;padding:12px 2px 10px}
+.logo-wrap{width:46px;height:46px;flex-shrink:0}
+.logo-wrap svg{width:46px;height:46px;display:block}
+.app-name{display:flex;flex-direction:column;line-height:1.2}
+.app-name-main{font-size:17px;font-weight:700;color:var(--text)}
+.app-name-sub{font-size:11px;color:var(--text2);margin-top:1px}
+
+/* TABS */
+.tabs{display:flex;background:var(--tab-bg);border-radius:var(--r);padding:4px;margin-bottom:12px;gap:4px;border:0.5px solid var(--border);backdrop-filter:blur(8px)}
+.tab{flex:1;padding:8px 4px;border:none;background:none;border-radius:10px;cursor:pointer;font-size:12px;color:var(--text2);transition:all .18s}
+.tab.active{background:var(--green);color:#fff;font-weight:600}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--r);padding:14px;margin-bottom:10px;border:0.5px solid var(--border);backdrop-filter:blur(8px)}
+.card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:12px}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--card2);border-radius:var(--rs);padding:11px;text-align:center}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:3px}
+.stat-value{font-size:17px;font-weight:600}
+.green{color:var(--green)}.amber{color:var(--amber)}
+.rate-row{grid-column:1/-1;background:var(--blue-bg);border-radius:var(--rs);padding:11px;display:flex;align-items:center;justify-content:space-between}
+.rate-label{font-size:13px;color:var(--blue);font-weight:500}
+.rate-val{font-size:19px;font-weight:700;color:var(--blue)}
+
+/* GOAL */
+.goal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:13px}
+.progress-track{height:8px;background:var(--card2);border-radius:4px;overflow:hidden}
+.progress-fill{height:100%;background:var(--green);border-radius:4px;transition:width .4s}
+.progress-info{display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--text2)}
+.goal-input-row{display:flex;gap:6px;margin-top:10px;align-items:stretch;width:100%}
+.goal-input-row input{flex:1;min-width:0;border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 10px;background:var(--card2);color:var(--text);font-size:14px}
+.goal-input-row select{flex:0 0 52px;border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 4px;background:var(--card2);color:var(--text);font-size:14px;cursor:pointer}
+.goal-input-row button{flex:0 0 auto;border:0.5px solid var(--border);background:none;border-radius:var(--rs);padding:8px 14px;cursor:pointer;color:var(--text);font-size:14px;white-space:nowrap}
+.goal-input-row button:hover{background:var(--card2)}
+
+/* CALENDAR */
+.month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.month-nav button{background:none;border:0.5px solid var(--border);border-radius:var(--rs);padding:6px 14px;cursor:pointer;color:var(--text);font-size:14px}
+.month-title{font-size:16px;font-weight:600}
+.weekdays{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:11px;color:var(--text2);margin-bottom:5px}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:var(--rs);font-size:12px;cursor:pointer;border:1.5px solid transparent;gap:2px;transition:background .15s}
+.day:hover{background:var(--card2)}.day.empty{cursor:default}
+.day.today{border-color:var(--blue)}
+.day.has-data{background:var(--green-bg)}
+.day.has-data .dn{color:#0a6b4a;font-weight:600}
+.day.selected{border-color:var(--green)}
+.day-dot{width:4px;height:4px;border-radius:50%;background:var(--green)}
+
+/* FORM */
+.form-title{font-size:15px;font-weight:600;margin-bottom:14px}
+.field{margin-bottom:11px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px}
+.field textarea{width:100%;border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 11px;background:var(--card2);color:var(--text);font-size:14px;resize:none;height:52px;font-family:inherit}
+.totals-bar{background:var(--blue-bg);border-radius:var(--rs);padding:9px 12px;font-size:12px;color:var(--blue);font-weight:500;margin-bottom:10px;min-height:34px}
+.src-block{background:var(--card2);border-radius:var(--rs);padding:11px;margin-bottom:8px;border:0.5px solid var(--border)}
+.src-block-header{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.src-name-input{flex:1;min-width:0;border:0.5px solid var(--border);border-radius:6px;padding:6px 9px;background:var(--card);color:var(--text);font-size:13px;font-weight:500}
+.src-del{flex:0 0 auto;border:0.5px solid var(--border);background:none;border-radius:6px;padding:5px 9px;cursor:pointer;color:var(--red);font-size:14px;line-height:1}
+.src-del:hover{background:var(--red-bg)}
+.src-fields{display:grid;grid-template-columns:1fr 80px 58px;gap:6px;align-items:end}
+.src-fields label{font-size:11px;color:var(--text2);display:block;margin-bottom:3px}
+.src-fields input,.src-fields select{width:100%;border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;background:var(--card);color:var(--text);font-size:13px}
+.src-rate{font-size:11px;color:var(--blue);margin-top:5px;min-height:14px}
+.add-source{width:100%;border:0.5px dashed var(--green);background:none;border-radius:var(--rs);padding:9px;cursor:pointer;color:var(--green);font-size:13px;margin-bottom:10px}
+.add-source:hover{background:var(--green-bg)}
+.btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.btn-save{background:var(--green);color:#fff;border:none;border-radius:var(--rs);padding:11px;font-size:14px;cursor:pointer;font-weight:600}
+.btn-save:hover{opacity:.88}
+.btn-del{background:none;border:0.5px solid var(--red);color:var(--red);border-radius:var(--rs);padding:11px;font-size:14px;cursor:pointer}
+.btn-del:hover{background:var(--red-bg)}
+
+/* WEEK FOLDERS */
+.week-folder{border-radius:var(--r);overflow:hidden;margin-bottom:10px;border:0.5px solid var(--border)}
+.week-header{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:var(--card);cursor:pointer;user-select:none;-webkit-user-select:none;transition:background .15s;backdrop-filter:blur(8px)}
+.week-header:hover{background:var(--card2)}
+.week-header-left{display:flex;align-items:center;gap:10px}
+.week-icon{width:32px;height:32px;border-radius:8px;background:var(--green-bg);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.week-icon.has-data{background:var(--green)}
+.week-label{font-size:14px;font-weight:600}
+.week-sublabel{font-size:11px;color:var(--text2);margin-top:1px}
+.week-total-sum{font-size:15px;font-weight:700;color:var(--green)}
+.week-total-hrs{font-size:11px;color:var(--text2);margin-top:1px;text-align:right}
+.week-chevron{font-size:14px;color:var(--text2);transition:transform .22s;flex-shrink:0;margin-left:6px}
+.week-chevron.open{transform:rotate(90deg)}
+.week-body{background:var(--card2);display:none;padding:4px 0}
+.week-body.open{display:block}
+.wday-row{display:flex;justify-content:space-between;align-items:flex-start;padding:10px 14px;border-bottom:0.5px solid var(--border)}
+.wday-row:last-child{border-bottom:none}
+.wday-date{font-size:13px;font-weight:600;color:var(--text)}
+.wday-weekday{font-size:11px;color:var(--text2)}
+.wday-srcs{font-size:11px;color:var(--text2);margin-top:2px;line-height:1.5}
+.wday-earn{font-weight:700;color:var(--green);font-size:14px}
+.wday-sub{font-size:11px;color:var(--text2);text-align:right;margin-top:2px}
+.week-empty{padding:12px 14px;font-size:12px;color:var(--text2);text-align:center}
+
+/* SETTINGS */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:0.5px solid var(--border)}
+.setting-row:last-child{border-bottom:none}
+.setting-label{font-size:14px}
+.setting-sub{font-size:12px;color:var(--text2);margin-top:2px}
+.toggle{position:relative;width:44px;height:24px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tog-sl{position:absolute;inset:0;background:var(--border);border-radius:12px;cursor:pointer;transition:.2s}
+.tog-sl::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.tog-sl{background:var(--green)}
+.toggle input:checked+.tog-sl::before{transform:translateX(20px)}
+.cur-sel{border:0.5px solid var(--border);border-radius:var(--rs);padding:6px 10px;background:var(--card2);color:var(--text);font-size:14px;cursor:pointer}
+.num-input{width:80px;border:0.5px solid var(--border);border-radius:var(--rs);padding:6px 10px;background:var(--card2);color:var(--text);font-size:14px;text-align:right}
+
+/* THEME PICKER */
+.theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:4px}
+.theme-btn{
+  border:2px solid transparent;border-radius:10px;padding:8px 4px;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:var(--card2);transition:border-color .18s,transform .15s;
+  font-size:10px;color:var(--text2);font-weight:500;
+}
+.theme-btn:active{transform:scale(.95)}
+.theme-btn.active{border-color:var(--green)}
+.theme-swatch{width:32px;height:32px;border-radius:8px;flex-shrink:0}
+
+/* LANGUAGE MODAL */
+.modal-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .22s;
+}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal-sheet{
+  background:var(--card);border-radius:20px 20px 0 0;
+  width:100%;max-width:430px;padding:20px 16px 36px;
+  transform:translateY(100%);transition:transform .28s cubic-bezier(.32,1,.32,1);
+  border:0.5px solid var(--border);
+}
+.modal-overlay.open .modal-sheet{transform:translateY(0)}
+.modal-title{font-size:16px;font-weight:700;margin-bottom:16px;text-align:center}
+.lang-option{
+  display:flex;align-items:center;gap:12px;padding:13px 10px;
+  border-radius:var(--rs);cursor:pointer;transition:background .15s;
+  font-size:15px;border:0.5px solid transparent;margin-bottom:4px;
+}
+.lang-option:hover{background:var(--card2)}
+.lang-option.active{background:var(--green-bg);border-color:var(--green)}
+.lang-flag{font-size:22px;width:30px;text-align:center}
+.lang-name{font-weight:500;color:var(--text)}
+.lang-native{font-size:12px;color:var(--text2)}
+.modal-close{
+  width:100%;margin-top:12px;padding:12px;
+  border:0.5px solid var(--border);border-radius:var(--rs);
+  background:none;color:var(--text);font-size:14px;cursor:pointer;
+}
+.modal-close:hover{background:var(--card2)}
+
+/* VERSION BADGE */
+.version-card{
+  background:var(--card);border-radius:var(--r);padding:14px;
+  margin-bottom:10px;border:0.5px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.version-label{font-size:12px;color:var(--text2)}
+.version-badge{
+  background:var(--green-bg);border:0.5px solid var(--green);
+  border-radius:20px;padding:4px 12px;
+  font-size:12px;font-weight:700;color:var(--green);letter-spacing:.3px;
+}
+.version-info{font-size:11px;color:var(--text2);margin-top:4px}
+
+.no-sel{text-align:center;color:var(--text2);font-size:13px;padding:22px 0}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="app-header">
+  <div class="logo-wrap">
+    <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="100" cy="110" r="72" fill="#23252A"/>
+      <ellipse cx="68" cy="52" rx="18" ry="22" fill="#23252A" transform="rotate(-15 68 52)"/>
+      <ellipse cx="132" cy="52" rx="18" ry="22" fill="#23252A" transform="rotate(15 132 52)"/>
+      <ellipse cx="68" cy="54" rx="10" ry="13" fill="#3a3d45" transform="rotate(-15 68 54)"/>
+      <ellipse cx="132" cy="54" rx="10" ry="13" fill="#3a3d45" transform="rotate(15 132 54)"/>
+      <ellipse cx="100" cy="118" rx="58" ry="55" fill="#2e3038"/>
+      <ellipse cx="100" cy="82" rx="52" ry="28" fill="#1e2028"/>
+      <rect x="48" y="68" width="104" height="20" rx="4" fill="#1e2028"/>
+      <line x1="55" y1="72" x2="55" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="63" y1="70" x2="63" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="71" y1="68" x2="71" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="79" y1="67" x2="79" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="87" y1="66" x2="87" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="95" y1="66" x2="95" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="103" y1="66" x2="103" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="111" y1="67" x2="111" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="119" y1="68" x2="119" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="127" y1="70" x2="127" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="135" y1="72" x2="135" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <line x1="143" y1="74" x2="143" y2="88" stroke="#28293a" stroke-width="2.5"/>
+      <rect x="48" y="84" width="104" height="12" rx="3" fill="#16181f"/>
+      <circle cx="56" cy="80" r="7" fill="none" stroke="#9aa0b0" stroke-width="3"/>
+      <circle cx="56" cy="80" r="4" fill="#2e3038"/>
+      <ellipse cx="83" cy="112" rx="11" ry="11" fill="#fff"/>
+      <ellipse cx="117" cy="112" rx="11" ry="11" fill="#fff"/>
+      <circle cx="85" cy="113" r="7" fill="#1a1a1a"/>
+      <circle cx="119" cy="113" r="7" fill="#1a1a1a"/>
+      <circle cx="87" cy="110" r="2.5" fill="#fff"/>
+      <circle cx="121" cy="110" r="2.5" fill="#fff"/>
+      <path d="M74 100 Q83 96 92 100" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M108 100 Q117 96 126 100" stroke="#1a1a1a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="100" cy="124" rx="5" ry="4" fill="#f4a0b0"/>
+      <path d="M95 128 Q100 133 105 128" stroke="#c07080" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <line x1="60" y1="122" x2="90" y2="125" stroke="#b0b8c8" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="60" y1="129" x2="90" y2="128" stroke="#b0b8c8" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="110" y1="125" x2="140" y2="122" stroke="#b0b8c8" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="110" y1="128" x2="140" y2="129" stroke="#b0b8c8" stroke-width="1.5" stroke-linecap="round"/>
+      <rect x="130" y="148" width="48" height="42" rx="7" fill="#1D9E75"/>
+      <rect x="130" y="148" width="48" height="13" rx="7" fill="#0f6b50"/>
+      <rect x="130" y="155" width="48" height="6" fill="#0f6b50"/>
+      <rect x="139" y="144" width="5" height="9" rx="2.5" fill="#0f6b50"/>
+      <rect x="164" y="144" width="5" height="9" rx="2.5" fill="#0f6b50"/>
+      <circle cx="141" cy="170" r="2.5" fill="white" opacity=".9"/>
+      <circle cx="151" cy="170" r="2.5" fill="white" opacity=".9"/>
+      <circle cx="161" cy="170" r="2.5" fill="white" opacity=".9"/>
+      <circle cx="141" cy="180" r="2.5" fill="white" opacity=".6"/>
+      <circle cx="151" cy="180" r="2.5" fill="#fff" opacity=".9"/>
+      <circle cx="161" cy="180" r="2.5" fill="white" opacity=".6"/>
+      <circle cx="171" cy="170" r="2.5" fill="white" opacity=".4"/>
+      <circle cx="171" cy="180" r="2.5" fill="white" opacity=".4"/>
+    </svg>
+  </div>
+  <div class="app-name">
+    <span class="app-name-main" id="headerTitle">Рабочий Календарь</span>
+    <span class="app-name-sub" id="headerSub">Учёт смен и доходов</span>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab active" onclick="showTab('calendar')" id="tab-calendar">📅 <span data-t="tab_cal">Календарь</span></button>
+  <button class="tab" onclick="showTab('stats')" id="tab-stats">📊 <span data-t="tab_stats">Итоги</span></button>
+  <button class="tab" onclick="showTab('settings')" id="tab-settings">⚙️ <span data-t="tab_set">Настройки</span></button>
+</div>
+
+<!-- ════ CALENDAR ════ -->
+<div id="tab-calendar-content">
+  <div class="card">
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">&#8249;</button>
+      <span class="month-title" id="monthTitle"></span>
+      <button onclick="changeMonth(1)">&#8250;</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-label" data-t="st_days">Дней</div><div class="stat-value" id="statDays">0</div></div>
+      <div class="stat"><div class="stat-label" data-t="st_hours">Часов</div><div class="stat-value" id="statHours">0</div></div>
+      <div class="stat"><div class="stat-label" data-t="st_earned">Заработано</div><div class="stat-value green" id="statEarned">0</div></div>
+      <div class="stat"><div class="stat-label" data-t="st_avg">Среднее/день</div><div class="stat-value amber" id="statAvg">0</div></div>
+      <div class="rate-row" id="rateRowEl">
+        <span class="rate-label">⏰ <span data-t="st_rate">Средняя ставка</span></span>
+        <span class="rate-val" id="statRate">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="goal-header">
+      <span style="color:var(--text2)">🎯 <span data-t="goal_label">Цель на месяц</span></span>
+      <span style="font-weight:600" id="goalDisplay">90 000 ₽</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    <div class="progress-info"><span id="progressPct">0%</span><span id="progressLeft"></span></div>
+    <div class="goal-input-row">
+      <input type="number" id="goalInput" data-t-ph="goal_ph">
+      <select id="goalCurrency">
+        <option value="RUB">₽</option><option value="USD">$</option><option value="EUR">€</option>
+      </select>
+      <button onclick="setGoal()" data-t="btn_save">Сохранить</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="weekdays" id="weekdaysRow"></div>
+    <div class="days-grid" id="daysGrid"></div>
+  </div>
+
+  <div id="entrySection">
+    <div class="card"><div class="no-sel" data-t="hint_tap">👆 Нажми на день чтобы внести смену</div></div>
+  </div>
+</div>
+
+<!-- ════ STATS ════ -->
+<div id="tab-stats-content" class="hidden">
+  <div id="weekFolders"></div>
+</div>
+
+<!-- ════ SETTINGS ════ -->
+<div id="tab-settings-content" class="hidden">
+
+  <div class="card">
+    <div class="card-title" data-t="sect_appearance">Внешний вид</div>
+
+    <!-- Тема -->
+    <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:10px">
+      <div class="setting-label" data-t="set_theme">Тема оформления</div>
+      <div class="theme-grid">
+        <button class="theme-btn" id="th-light" onclick="setTheme('light')">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#f0f2f5,#fff)"></div>
+          <span data-t="th_light">Светлая</span>
+        </button>
+        <button class="theme-btn" id="th-dark" onclick="setTheme('dark')">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#18191c,#2e3035)"></div>
+          <span data-t="th_dark">Тёмная</span>
+        </button>
+        <button class="theme-btn" id="th-pink" onclick="setTheme('pink')">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#ffe4f0,#ffc0d8)"></div>
+          <span data-t="th_pink">Розовая</span>
+        </button>
+        <button class="theme-btn" id="th-blue" onclick="setTheme('blue')">
+          <div class="theme-swatch" style="background:linear-gradient(135deg,#ddf0ff,#b0d4f5)"></div>
+          <span data-t="th_blue">Голубая</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Средняя ставка -->
+    <div class="setting-row">
+      <div>
+        <div class="setting-label" data-t="set_rate">Средняя ставка ₽/ч</div>
+        <div class="setting-sub" data-t="set_rate_sub">Показывать почасовую ставку</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="showRateToggle" onchange="toggleRate()"><span class="tog-sl"></span></label>
+    </div>
+
+    <!-- Язык -->
+    <div class="setting-row" style="cursor:pointer" onclick="openLangModal()">
+      <div>
+        <div class="setting-label" data-t="set_lang">Язык</div>
+        <div class="setting-sub" id="currentLangLabel">🇷🇺 Русский</div>
+      </div>
+      <span style="color:var(--text2);font-size:18px">›</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" data-t="sect_currency">Валюта по умолчанию</div>
+    <div class="setting-row">
+      <div><div class="setting-label" data-t="set_defcur">Для новых источников дохода</div></div>
+      <select class="cur-sel" id="defaultCurrency" onchange="saveSettings()">
+        <option value="RUB">₽ Рубль</option>
+        <option value="USD">$ Доллар</option>
+        <option value="EUR">€ Евро</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" data-t="sect_rates">Курсы валют (итоги в ₽)</div>
+    <div class="setting-row">
+      <div><div class="setting-label">1 USD = ? ₽</div></div>
+      <input class="num-input" type="number" id="rateUSD" value="90" onchange="saveSettings()">
+    </div>
+    <div class="setting-row">
+      <div><div class="setting-label">1 EUR = ? ₽</div></div>
+      <input class="num-input" type="number" id="rateEUR" value="100" onchange="saveSettings()">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title" data-t="sect_data">Данные</div>
+    <div class="setting-row">
+      <div>
+        <div class="setting-label" data-t="set_reset">Сбросить всё</div>
+        <div class="setting-sub" data-t="set_reset_sub">Удалить все записи</div>
+      </div>
+      <button class="cur-sel" style="border-color:var(--red);color:var(--red);cursor:pointer" onclick="clearAll()" data-t="btn_delete">Удалить</button>
+    </div>
+  </div>
+
+  <!-- ВЕРСИЯ -->
+  <div class="version-card">
+    <div>
+      <div class="version-label" data-t="ver_label">Версия приложения</div>
+      <div class="version-info" data-t="ver_date">Обновлено: май 2026</div>
+    </div>
+    <div class="version-badge">v2.0.0</div>
+  </div>
+
+</div><!-- /settings -->
+
+</div><!-- /app -->
+
+<!-- ════ LANGUAGE MODAL ════ -->
+<div class="modal-overlay" id="langModal" onclick="closeLangModal(event)">
+  <div class="modal-sheet">
+    <div class="modal-title" data-t="lang_title">Выберите язык</div>
+    <div id="langList"></div>
+    <button class="modal-close" onclick="closeLangModal()" data-t="btn_close">Закрыть</button>
+  </div>
+</div>
+
+<script>
+if(window.Telegram?.WebApp){Telegram.WebApp.ready();Telegram.WebApp.expand();}
+
+/* ══════════════════════════════════════
+   ПЕРЕВОДЫ
+══════════════════════════════════════ */
+const LANGS=[
+  {code:'ru',flag:'🇷🇺',name:'Русский',native:'Русский'},
+  {code:'tg',flag:'🇹🇯',name:'Тоҷикӣ',native:'Тоҷикӣ'},
+  {code:'uz',flag:'🇺🇿',name:'O\'zbekcha',native:'O\'zbek'},
+  {code:'ky',flag:'🇰🇬',name:'Кыргызча',native:'Кыргызча'},
+  {code:'en',flag:'🇬🇧',name:'English',native:'English'},
+];
+
+const T={
+  ru:{
+    tab_cal:'Календарь',tab_stats:'Итоги',tab_set:'Настройки',
+    st_days:'Дней',st_hours:'Часов',st_earned:'Заработано',st_avg:'Среднее/день',st_rate:'Средняя ставка',
+    goal_label:'Цель на месяц',goal_ph:'Сумма цели',btn_save:'Сохранить',
+    hint_tap:'👆 Нажми на день чтобы внести смену',
+    sect_appearance:'Внешний вид',set_theme:'Тема оформления',
+    th_light:'Светлая',th_dark:'Тёмная',th_pink:'Розовая',th_blue:'Голубая',
+    set_rate:'Средняя ставка ₽/ч',set_rate_sub:'Показывать почасовую ставку',
+    set_lang:'Язык',
+    sect_currency:'Валюта по умолчанию',set_defcur:'Для новых источников дохода',
+    sect_rates:'Курсы валют (итоги в ₽)',
+    sect_data:'Данные',set_reset:'Сбросить всё',set_reset_sub:'Удалить все записи',btn_delete:'Удалить',
+    ver_label:'Версия приложения',ver_date:'Обновлено: май 2026',
+    lang_title:'Выберите язык',btn_close:'Закрыть',
+    confirm_reset:'Удалить все данные?',
+    wk_label:'Неделя',no_records:'Нет записей за эту неделю',
+    src_ph:'Название источника',add_src:'+ Добавить источник дохода',
+    note_ph:'например: переработка, командировка...',
+    btn_del_day:'✕ Удалить',hint_enter:'Введи данные ниже',
+    earned:'Заработано',remain:'Осталось',goal_done:'🎉 Цель!',
+    months:['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+    wdays:['Пн','Вт','Ср','Чт','Пт','Сб','Вс'],
+    header_title:'Рабочий Календарь',header_sub:'Учёт смен и доходов',
+    total:'Итого',rate:'Ставка',h:'ч',
+  },
+  tg:{
+    tab_cal:'Тақвим',tab_stats:'Натиҷа',tab_set:'Танзимот',
+    st_days:'Рӯзҳо',st_hours:'Соатҳо',st_earned:'Даромад',st_avg:'Миёна/рӯз',st_rate:'Нархи миёна',
+    goal_label:'Ҳадаф',goal_ph:'Маблағ',btn_save:'Нигоҳ',
+    hint_tap:'👆 Рӯзро пахш кунед',
+    sect_appearance:'Намуди зоҳирӣ',set_theme:'Мавзӯ',
+    th_light:'Равшан',th_dark:'Торик',th_pink:'Гулобӣ',th_blue:'Кабуд',
+    set_rate:'Нархи соатӣ',set_rate_sub:'Нишон додан',
+    set_lang:'Забон',
+    sect_currency:'Асъор',set_defcur:'Барои манбаъҳои нав',
+    sect_rates:'Курси асъор',
+    sect_data:'Маълумот',set_reset:'Тозакунӣ',set_reset_sub:'Ҳамаро нест кунед',btn_delete:'Нест кунед',
+    ver_label:'Версияи барнома',ver_date:'Навшуда: май 2026',
+    lang_title:'Забонро интихоб кунед',btn_close:'Пӯшидан',
+    confirm_reset:'Ҳамаи маълумотро нест кунем?',
+    wk_label:'Ҳафта',no_records:'Дар ин ҳафта ягон ёддошт нест',
+    src_ph:'Номи манбаъ',add_src:'+ Манбаъ илова кунед',
+    note_ph:'Эзоҳ...',btn_del_day:'✕ Нест',hint_enter:'Маълумот ворид кунед',
+    earned:'Даромад',remain:'Монд',goal_done:'🎉 Ҳадаф!',
+    months:['Январ','Феврал','Март','Апрел','Май','Июн','Июл','Август','Сентябр','Октябр','Ноябр','Декабр'],
+    wdays:['Дш','Сш','Чш','Пш','Ҷм','Шб','Яш'],
+    header_title:'Тақвими кор',header_sub:'Ҳисоби навбатҳо',
+    total:'Ҷамъ',rate:'Нарх',h:'с',
+  },
+  uz:{
+    tab_cal:'Taqvim',tab_stats:'Natija',tab_set:'Sozlamalar',
+    st_days:'Kunlar',st_hours:'Soatlar',st_earned:'Daromad',st_avg:'O\'rtacha/kun',st_rate:'O\'rtacha stavka',
+    goal_label:'Oylik maqsad',goal_ph:'Summa',btn_save:'Saqlash',
+    hint_tap:'👆 Kun ustiga bosing',
+    sect_appearance:'Ko\'rinish',set_theme:'Mavzu',
+    th_light:'Yorqin',th_dark:'Qoʻngʻir',th_pink:'Pushti',th_blue:'Ko\'k',
+    set_rate:'Soatlik stavka',set_rate_sub:'Ko\'rsatish',
+    set_lang:'Til',
+    sect_currency:'Asosiy valyuta',set_defcur:'Yangi manbalar uchun',
+    sect_rates:'Valyuta kursi',
+    sect_data:'Ma\'lumotlar',set_reset:'Tozalash',set_reset_sub:'Barchasini o\'chirish',btn_delete:'O\'chirish',
+    ver_label:'Ilova versiyasi',ver_date:'Yangilangan: may 2026',
+    lang_title:'Tilni tanlang',btn_close:'Yopish',
+    confirm_reset:'Barcha ma\'lumotlarni o\'chiramizmi?',
+    wk_label:'Hafta',no_records:'Bu haftada yozuv yo\'q',
+    src_ph:'Manba nomi',add_src:'+ Manba qo\'shish',
+    note_ph:'Izoh...',btn_del_day:'✕ O\'chir',hint_enter:'Ma\'lumot kiriting',
+    earned:'Daromad',remain:'Qoldi',goal_done:'🎉 Maqsad!',
+    months:['Yanvar','Fevral','Mart','Aprel','May','Iyun','Iyul','Avgust','Sentyabr','Oktyabr','Noyabr','Dekabr'],
+    wdays:['Du','Se','Ch','Pa','Ju','Sh','Ya'],
+    header_title:'Ish taqvimi',header_sub:'Smenalar hisobi',
+    total:'Jami',rate:'Stavka',h:'s',
+  },
+  ky:{
+    tab_cal:'Жылнаама',tab_stats:'Жыйынтык',tab_set:'Жөндөөлөр',
+    st_days:'Күндөр',st_hours:'Саатtar',st_earned:'Киреше',st_avg:'Орто/күн',st_rate:'Орто баасы',
+    goal_label:'Айлык максат',goal_ph:'Сумма',btn_save:'Сактоо',
+    hint_tap:'👆 Күнгө басыңыз',
+    sect_appearance:'Дизайн',set_theme:'Теме',
+    th_light:'Жарык',th_dark:'Күңүрт',th_pink:'Кызгылт',th_blue:'Көк',
+    set_rate:'Саатта баасы',set_rate_sub:'Көрсөтүү',
+    set_lang:'Тил',
+    sect_currency:'Негизги валюта',set_defcur:'Жаңы булактар үчүн',
+    sect_rates:'Валюта курсу',
+    sect_data:'Маалыматтар',set_reset:'Тазалоо',set_reset_sub:'Баарын өчүрүү',btn_delete:'Өчүрүү',
+    ver_label:'Колдонмо версиясы',ver_date:'Жаңыланды: май 2026',
+    lang_title:'Тилди тандаңыз',btn_close:'Жабуу',
+    confirm_reset:'Бардык маалыматты өчүрөбүзбү?',
+    wk_label:'Жума',no_records:'Бул жумада жазуу жок',
+    src_ph:'Булактын аты',add_src:'+ Булак кошуу',
+    note_ph:'Эскертме...',btn_del_day:'✕ Өчүр',hint_enter:'Маалымат киргизиңиз',
+    earned:'Киреше',remain:'Калды',goal_done:'🎉 Максат!',
+    months:['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'],
+    wdays:['Дш','Шш','Шр','Бш','Жм','Иш','Жк'],
+    header_title:'Иш жылнаамасы',header_sub:'Сменалар эсеби',
+    total:'Жами',rate:'Баасы',h:'с',
+  },
+  en:{
+    tab_cal:'Calendar',tab_stats:'Summary',tab_set:'Settings',
+    st_days:'Days',st_hours:'Hours',st_earned:'Earned',st_avg:'Avg/day',st_rate:'Hourly rate',
+    goal_label:'Monthly goal',goal_ph:'Goal amount',btn_save:'Save',
+    hint_tap:'👆 Tap a day to log a shift',
+    sect_appearance:'Appearance',set_theme:'Theme',
+    th_light:'Light',th_dark:'Dark',th_pink:'Pink',th_blue:'Blue',
+    set_rate:'Hourly rate',set_rate_sub:'Show hourly rate block',
+    set_lang:'Language',
+    sect_currency:'Default currency',set_defcur:'For new income sources',
+    sect_rates:'Exchange rates',
+    sect_data:'Data',set_reset:'Reset all',set_reset_sub:'Delete all records',btn_delete:'Delete',
+    ver_label:'App version',ver_date:'Updated: May 2026',
+    lang_title:'Select language',btn_close:'Close',
+    confirm_reset:'Delete all data?',
+    wk_label:'Week',no_records:'No records this week',
+    src_ph:'Source name',add_src:'+ Add income source',
+    note_ph:'e.g. overtime, business trip...',btn_del_day:'✕ Remove',hint_enter:'Enter data below',
+    earned:'Earned',remain:'Left',goal_done:'🎉 Goal reached!',
+    months:['January','February','March','April','May','June','July','August','September','October','November','December'],
+    wdays:['Mo','Tu','We','Th','Fr','Sa','Su'],
+    header_title:'Work Calendar',header_sub:'Shift & income tracker',
+    total:'Total',rate:'Rate',h:'h',
+  },
+};
+
+/* ══════════════════════════════════════
+   СОСТОЯНИЕ
+══════════════════════════════════════ */
+const APP_VERSION='2.0.0';
+
+let cur=new Date();cur.setDate(1);
+let selDay=null;
+let data  =JSON.parse(localStorage.getItem('wData') ||'{}');
+let goals =JSON.parse(localStorage.getItem('wGoals')||'{}');
+let cfg   =JSON.parse(localStorage.getItem('wCfg')  ||'{}');
+if(cfg.showRate===undefined)cfg.showRate=true;
+if(!cfg.defCur)cfg.defCur='RUB';
+if(!cfg.usd)cfg.usd=90;
+if(!cfg.eur)cfg.eur=100;
+if(!cfg.theme)cfg.theme='light';
+if(!cfg.lang)cfg.lang='ru';
+
+function t(key){return(T[cfg.lang]||T.ru)[key]||T.ru[key]||key}
+function tArr(key){return(T[cfg.lang]||T.ru)[key]||T.ru[key]||[]}
+
+function save(){
+  localStorage.setItem('wData',  JSON.stringify(data));
+  localStorage.setItem('wGoals', JSON.stringify(goals));
+  localStorage.setItem('wCfg',   JSON.stringify(cfg));
+}
+
+/* ══════════════════════════════════════
+   ВАЛЮТА
+══════════════════════════════════════ */
+function toRUB(a,c){
+  if(c==='USD')return a*(cfg.usd||90);
+  if(c==='EUR')return a*(cfg.eur||100);
+  return a;
+}
+const SYM={RUB:'₽',USD:'$',EUR:'€'};
+function fmtRUB(n){return'₽'+Math.round(n).toLocaleString('ru-RU')}
+function fmtAmt(a,c){return(SYM[c]||'₽')+Math.round(a).toLocaleString('ru-RU')}
+function fmtH(h){return h%1===0?h:parseFloat(h.toFixed(1))}
+
+/* ══════════════════════════════════════
+   КЛЮЧИ
+══════════════════════════════════════ */
+function dKey(y,m,d){return`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`}
+function mKey(y,m){return`${y}-${m}`}
+
+/* ══════════════════════════════════════
+   ЦЕЛЬ
+══════════════════════════════════════ */
+function getGoal(){return goals[mKey(cur.getFullYear(),cur.getMonth())]||{amount:90000,currency:'RUB'}}
+function setGoal(){
+  const v=parseFloat(document.getElementById('goalInput').value);
+  if(!v||v<=0)return;
+  goals[mKey(cur.getFullYear(),cur.getMonth())]={amount:v,currency:document.getElementById('goalCurrency').value};
+  save();document.getElementById('goalInput').value='';renderStats();
+}
+
+/* ══════════════════════════════════════
+   ТЕМА
+══════════════════════════════════════ */
+function setTheme(name){
+  cfg.theme=name;save();applyTheme();
+}
+function applyTheme(){
+  document.documentElement.setAttribute('data-theme',cfg.theme);
+  // подсветить активную кнопку темы
+  ['light','dark','pink','blue'].forEach(t=>{
+    const btn=document.getElementById('th-'+t);
+    if(btn)btn.classList.toggle('active',cfg.theme===t);
+  });
+}
+
+/* ══════════════════════════════════════
+   СТАВКА
+══════════════════════════════════════ */
+function applyRateVisibility(){
+  const el=document.getElementById('rateRowEl');
+  if(el)el.classList.toggle('hidden',!cfg.showRate);
+  const tog=document.getElementById('showRateToggle');
+  if(tog)tog.checked=!!cfg.showRate;
+}
+function toggleRate(){cfg.showRate=document.getElementById('showRateToggle').checked;save();applyRateVisibility();}
+
+/* ══════════════════════════════════════
+   НАСТРОЙКИ (курсы, валюта)
+══════════════════════════════════════ */
+function saveSettings(){
+  cfg.defCur=document.getElementById('defaultCurrency').value;
+  cfg.usd=parseFloat(document.getElementById('rateUSD').value)||90;
+  cfg.eur=parseFloat(document.getElementById('rateEUR').value)||100;
+  save();renderStats();
+}
+function loadSettings(){
+  applyTheme();
+  applyRateVisibility();
+  document.getElementById('defaultCurrency').value=cfg.defCur||'RUB';
+  document.getElementById('rateUSD').value=cfg.usd||90;
+  document.getElementById('rateEUR').value=cfg.eur||100;
+  updateLangLabel();
+}
+function clearAll(){
+  if(!confirm(t('confirm_reset')))return;
+  data={};goals={};save();selDay=null;
+  document.getElementById('entrySection').innerHTML=
+    `<div class="card"><div class="no-sel">${t('hint_tap')}</div></div>`;
+  renderCalendar();renderStats();
+}
+
+/* ══════════════════════════════════════
+   ЯЗЫК
+══════════════════════════════════════ */
+function openLangModal(){
+  const modal=document.getElementById('langModal');
+  // Построить список
+  const list=document.getElementById('langList');
+  list.innerHTML=LANGS.map(l=>`
+    <div class="lang-option${cfg.lang===l.code?' active':''}" onclick="selectLang('${l.code}')">
+      <span class="lang-flag">${l.flag}</span>
+      <div>
+        <div class="lang-name">${l.native}</div>
+        <div class="lang-native">${l.name}</div>
+      </div>
+    </div>`).join('');
+  modal.classList.add('open');
+}
+function closeLangModal(e){
+  if(e&&e.target!==document.getElementById('langModal'))return;
+  document.getElementById('langModal').classList.remove('open');
+}
+function selectLang(code){
+  cfg.lang=code;save();
+  document.getElementById('langModal').classList.remove('open');
+  updateLangLabel();
+  applyTranslations();
+  renderCalendar();renderStats();
+}
+function updateLangLabel(){
+  const l=LANGS.find(x=>x.code===cfg.lang)||LANGS[0];
+  document.getElementById('currentLangLabel').textContent=`${l.flag} ${l.native}`;
+}
+
+/* ── Перевод всех элементов с data-t ── */
+function applyTranslations(){
+  document.querySelectorAll('[data-t]').forEach(el=>{
+    el.textContent=t(el.getAttribute('data-t'));
+  });
+  document.querySelectorAll('[data-t-ph]').forEach(el=>{
+    el.placeholder=t(el.getAttribute('data-t-ph'));
+  });
+  // Заголовок приложения
+  const ht=document.getElementById('headerTitle');
+  const hs=document.getElementById('headerSub');
+  if(ht)ht.textContent=t('header_title');
+  if(hs)hs.textContent=t('header_sub');
+  // Подсказка в секции ввода (если открыта)
+  document.querySelectorAll('.no-sel').forEach(el=>{
+    if(!el.closest('#entrySection'))return;
+    el.textContent=t('hint_tap');
+  });
+}
+
+/* ══════════════════════════════════════
+   ВКЛАДКИ
+══════════════════════════════════════ */
+function showTab(n){
+  ['calendar','stats','settings'].forEach(tab=>{
+    document.getElementById('tab-'+tab+'-content').classList.toggle('hidden',tab!==n);
+    document.getElementById('tab-'+tab).classList.toggle('active',tab===n);
+  });
+  if(n==='stats')renderWeeks();
+}
+
+/* ══════════════════════════════════════
+   АГРЕГАЦИЯ ДНЯ
+══════════════════════════════════════ */
+function dayTotals(d){
+  let totalH=0,totalRUB=0;
+  (d.sources||[]).forEach(s=>{totalH+=parseFloat(s.hours||0);totalRUB+=toRUB(parseFloat(s.amount||0),s.currency);});
+  return{totalH,totalRUB};
+}
+
+/* ══════════════════════════════════════
+   СТАТИСТИКА
+══════════════════════════════════════ */
+function renderStats(){
+  const y=cur.getFullYear(),m=cur.getMonth();
+  const prefix=`${y}-${String(m+1).padStart(2,'0')}`;
+  const keys=Object.keys(data).filter(k=>k.startsWith(prefix));
+  let sumH=0,sumRUB=0,cnt=0;
+  keys.forEach(k=>{const tt=dayTotals(data[k]);sumH+=tt.totalH;sumRUB+=tt.totalRUB;if(tt.totalH>0||tt.totalRUB>0)cnt++;});
+  document.getElementById('statDays').textContent=cnt;
+  document.getElementById('statHours').textContent=fmtH(sumH);
+  document.getElementById('statEarned').textContent=fmtRUB(sumRUB);
+  document.getElementById('statAvg').textContent=cnt>0?fmtRUB(sumRUB/cnt):'0';
+  document.getElementById('statRate').textContent=sumH>0?fmtRUB(sumRUB/sumH)+'/'+t('h'):'—';
+  const goal=getGoal(),goalRUB=toRUB(goal.amount,goal.currency);
+  document.getElementById('goalDisplay').textContent=fmtAmt(goal.amount,goal.currency);
+  const pct=Math.min(100,Math.round(sumRUB/goalRUB*100));
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('progressPct').textContent=pct+'%';
+  const left=Math.max(0,goalRUB-sumRUB);
+  document.getElementById('progressLeft').textContent=
+    left>0?t('remain')+': '+fmtRUB(left):t('goal_done');
+  // Название месяца в навигации
+  renderCalendarHeader();
+}
+
+/* ══════════════════════════════════════
+   НЕДЕЛИ
+══════════════════════════════════════ */
+function getWeeksOfMonth(y,m){
+  const days=new Date(y,m+1,0).getDate();
+  const weeks=[];let week=null;
+  for(let d=1;d<=days;d++){
+    const dow=new Date(y,m,d).getDay();
+    const wi=(dow===0)?6:dow-1;
+    if(wi===0||d===1){week={startD:d,days:[]};weeks.push(week);}
+    week.days.push({d,wi,k:dKey(y,m,d)});
+  }
+  return weeks;
+}
+
+function renderWeeks(){
+  const y=cur.getFullYear(),m=cur.getMonth();
+  const weeks=getWeeksOfMonth(y,m);
+  const MONTHS=tArr('months');
+  const WDAYS=tArr('wdays');
+  const prefix=`${y}-${String(m+1).padStart(2,'0')}`;
+  const allKeys=Object.keys(data).filter(k=>k.startsWith(prefix));
+  let mH=0,mRUB=0,mCnt=0;
+  allKeys.forEach(k=>{const tt=dayTotals(data[k]);mH+=tt.totalH;mRUB+=tt.totalRUB;if(tt.totalH>0||tt.totalRUB>0)mCnt++;});
+
+  let html=`<div class="card" style="margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:15px;font-weight:700">${MONTHS[m]} ${y}</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px">${mCnt} ${t('st_days')} · ${fmtH(mH)} ${t('h')}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:20px;font-weight:700;color:var(--green)">${fmtRUB(mRUB)}</div>
+        ${mH>0&&mRUB>0?`<div style="font-size:11px;color:var(--blue)">${fmtRUB(mRUB/mH)}/${t('h')}</div>`:''}
+      </div>
+    </div>
+  </div>`;
+
+  weeks.forEach((wk,wi)=>{
+    const startD=wk.days[0].d,endD=wk.days[wk.days.length-1].d;
+    let wH=0,wRUB=0,wCnt=0;
+    wk.days.forEach(({k})=>{
+      if(data[k]){const tt=dayTotals(data[k]);wH+=tt.totalH;wRUB+=tt.totalRUB;if(tt.totalH>0||tt.totalRUB>0)wCnt++;}
+    });
+    const hasData=wRUB>0||wH>0;
+
+    let daysHtml='',hasEntry=false;
+    wk.days.forEach(({d,wi:wdi,k})=>{
+      const entry=data[k];if(!entry)return;
+      const tt=dayTotals(entry);if(!tt.totalH&&!tt.totalRUB)return;
+      hasEntry=true;
+      const srcsStr=(entry.sources||[]).filter(s=>parseFloat(s.amount)>0).map(s=>{
+        const h=parseFloat(s.hours||0);
+        return`${s.name||t('st_earned')}${h>0?' '+fmtH(h)+t('h'):''}: ${fmtAmt(s.amount,s.currency)}`;
+      }).join(' · ');
+      daysHtml+=`<div class="wday-row">
+        <div>
+          <span class="wday-date">${d}</span>
+          <span class="wday-weekday"> ${WDAYS[wdi]}</span>
+          ${srcsStr?`<div class="wday-srcs">${srcsStr}</div>`:''}
+          ${entry.note?`<div class="wday-srcs">💬 ${entry.note}</div>`:''}
+        </div>
+        <div>
+          <div class="wday-earn">${fmtRUB(tt.totalRUB)}</div>
+          <div class="wday-sub">${tt.totalH>0?fmtH(tt.totalH)+t('h'):''}${tt.totalH>0&&tt.totalRUB>0?' · '+fmtRUB(tt.totalRUB/tt.totalH)+'/'+t('h'):''}</div>
+        </div>
+      </div>`;
+    });
+    if(!hasEntry)daysHtml=`<div class="week-empty">${t('no_records')}</div>`;
+
+    html+=`<div class="week-folder">
+      <div class="week-header" onclick="toggleWeek(${wi})">
+        <div class="week-header-left">
+          <div class="week-icon${hasData?' has-data':''}">${hasData?'✅':'📅'}</div>
+          <div>
+            <div class="week-label">${t('wk_label')} ${wi+1}</div>
+            <div class="week-sublabel">${startD}–${endD} ${MONTHS[m]}${wCnt>0?' · '+wCnt+' '+t('st_days'):''}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${hasData?`<div class="week-total"><div class="week-total-sum">${fmtRUB(wRUB)}</div><div class="week-total-hrs">${fmtH(wH)} ${t('h')}</div></div>`:''}
+          <div class="week-chevron" id="chev${wi}">›</div>
+        </div>
+      </div>
+      <div class="week-body" id="wbody${wi}">${daysHtml}</div>
+    </div>`;
+  });
+
+  document.getElementById('weekFolders').innerHTML=html;
+
+  // Авто-раскрыть текущую неделю
+  const today=new Date();
+  if(today.getFullYear()===y&&today.getMonth()===m){
+    weeks.forEach((wk,wi)=>{
+      if(wk.days.some(({d})=>d===today.getDate()))openWeek(wi);
+    });
+  }
+}
+
+function toggleWeek(i){
+  const b=document.getElementById('wbody'+i),c=document.getElementById('chev'+i);
+  if(!b||!c)return;
+  const o=b.classList.contains('open');
+  b.classList.toggle('open',!o);c.classList.toggle('open',!o);
+}
+function openWeek(i){
+  const b=document.getElementById('wbody'+i),c=document.getElementById('chev'+i);
+  if(b)b.classList.add('open');if(c)c.classList.add('open');
+}
+
+/* ══════════════════════════════════════
+   КАЛЕНДАРЬ
+══════════════════════════════════════ */
+function renderCalendarHeader(){
+  const y=cur.getFullYear(),m=cur.getMonth();
+  const MONTHS=tArr('months');
+  document.getElementById('monthTitle').textContent=`${MONTHS[m]} ${y}`;
+}
+function renderCalendar(){
+  const y=cur.getFullYear(),m=cur.getMonth();
+  renderCalendarHeader();
+  // Дни недели
+  const WDAYS=tArr('wdays');
+  document.getElementById('weekdaysRow').innerHTML=WDAYS.map(d=>`<div>${d}</div>`).join('');
+
+  const grid=document.getElementById('daysGrid');grid.innerHTML='';
+  const first=new Date(y,m,1).getDay(),offset=(first===0)?6:first-1;
+  const days=new Date(y,m+1,0).getDate(),today=new Date();
+  for(let i=0;i<offset;i++){const e=document.createElement('div');e.className='day empty';grid.appendChild(e);}
+  for(let d=1;d<=days;d++){
+    const k=dKey(y,m,d),el=document.createElement('div');el.className='day';
+    if(today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===d)el.classList.add('today');
+    const tt=data[k]?dayTotals(data[k]):{totalH:0,totalRUB:0};
+    if(tt.totalH>0||tt.totalRUB>0)el.classList.add('has-data');
+    if(selDay===d)el.classList.add('selected');
+    el.innerHTML=`<span class="dn">${d}</span>${(tt.totalH>0||tt.totalRUB>0)?'<span class="day-dot"></span>':''}`;
+    el.onclick=(()=>{const dd=d;return()=>selectDay(dd);})();
+    grid.appendChild(el);
+  }
+}
+
+/* ══════════════════════════════════════
+   ФОРМА ДНЯ
+══════════════════════════════════════ */
+function selectDay(d){
+  selDay=d;renderCalendar();
+  const y=cur.getFullYear(),m=cur.getMonth(),k=dKey(y,m,d);
+  const MONTHS=tArr('months');
+  const saved=JSON.parse(JSON.stringify(data[k]||{sources:[],note:''}));
+  if(!saved.sources||!saved.sources.length)
+    saved.sources=[{name:'',hours:'',amount:'',currency:cfg.defCur||'RUB'}];
+  window._srcs=saved.sources;
+
+  document.getElementById('entrySection').innerHTML=`
+    <div class="card">
+      <div class="form-title">📅 ${d} ${MONTHS[m]} ${y}</div>
+      <div class="totals-bar" id="totalsBar">${t('hint_enter')}</div>
+      <div id="srcList"></div>
+      <button class="add-source" onclick="addSrc()">${t('add_src')}</button>
+      <div class="field">
+        <label style="font-size:12px;color:var(--text2);display:block;margin-bottom:4px">${t('note_ph')}</label>
+        <textarea id="fNote" placeholder="${t('note_ph')}">${saved.note||''}</textarea>
+      </div>
+      <div class="btn-row">
+        <button class="btn-save" onclick="saveEntry('${k}')">✓ ${t('btn_save')}</button>
+        <button class="btn-del" onclick="delEntry('${k}')">${t('btn_del_day')}</button>
+      </div>
+    </div>`;
+  renderSrcs();
+}
+
+function calcSrcRate(s){
+  const h=parseFloat(s.hours||0),rub=toRUB(parseFloat(s.amount||0),s.currency);
+  return h>0&&rub>0?`${t('rate')}: ${fmtRUB(rub/h)}/${t('h')}`:'';
+}
+function renderSrcs(){
+  const list=document.getElementById('srcList');if(!list)return;
+  list.innerHTML=window._srcs.map((s,i)=>`
+    <div class="src-block">
+      <div class="src-block-header">
+        <input class="src-name-input" type="text" placeholder="${t('src_ph')}"
+          value="${s.name||''}" oninput="updSrc(${i},'name',this.value)">
+        ${window._srcs.length>1?`<button class="src-del" onclick="rmSrc(${i})">✕</button>`:''}
+      </div>
+      <div class="src-fields">
+        <div>
+          <label>${t('st_hours')} (—)</label>
+          <input type="number" step="0.5" min="0" max="24" placeholder="—"
+            value="${s.hours||''}" oninput="updSrc(${i},'hours',this.value)">
+        </div>
+        <div>
+          <label>${t('st_earned')}</label>
+          <input type="number" min="0" placeholder="0"
+            value="${s.amount||''}" oninput="updSrc(${i},'amount',this.value)">
+        </div>
+        <div>
+          <label>Валюта</label>
+          <select onchange="updSrc(${i},'currency',this.value)">
+            ${['RUB','USD','EUR'].map(c=>`<option value="${c}"${s.currency===c?' selected':''}>${SYM[c]}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="src-rate" id="sr${i}">${calcSrcRate(s)}</div>
+    </div>`).join('');
+  calcTotals();
+}
+function updSrc(i,f,v){
+  window._srcs[i][f]=v;
+  const el=document.getElementById('sr'+i);
+  if(el)el.textContent=calcSrcRate(window._srcs[i]);
+  calcTotals();
+}
+function addSrc(){window._srcs.push({name:'',hours:'',amount:'',currency:cfg.defCur||'RUB'});renderSrcs();}
+function rmSrc(i){window._srcs.splice(i,1);renderSrcs();}
+function calcTotals(){
+  let totalH=0,totalRUB=0;
+  window._srcs.forEach(s=>{totalH+=parseFloat(s.hours||0);totalRUB+=toRUB(parseFloat(s.amount||0),s.currency);});
+  const bar=document.getElementById('totalsBar');if(!bar)return;
+  if(!totalRUB&&!totalH){bar.textContent=t('hint_enter');return;}
+  let txt=`${t('total')}: ${fmtRUB(totalRUB)}`;
+  if(totalH>0)txt+=` · ${fmtH(totalH)} ${t('h')}`;
+  if(totalH>0&&totalRUB>0)txt+=` · ${fmtRUB(totalRUB/totalH)}/${t('h')}`;
+  bar.textContent=txt;
+}
+function saveEntry(k){
+  const srcs=window._srcs
+    .map(s=>({name:s.name||'',hours:parseFloat(s.hours)||0,amount:parseFloat(s.amount)||0,currency:s.currency||'RUB'}))
+    .filter(s=>s.amount>0||s.hours>0);
+  data[k]={sources:srcs,note:document.getElementById('fNote').value.trim()};
+  save();renderCalendar();renderStats();selectDay(selDay);
+}
+function delEntry(k){
+  delete data[k];save();renderCalendar();renderStats();selDay=null;
+  document.getElementById('entrySection').innerHTML=
+    `<div class="card"><div class="no-sel">${t('hint_tap')}</div></div>`;
+}
+function changeMonth(dir){
+  cur.setMonth(cur.getMonth()+dir);selDay=null;
+  document.getElementById('entrySection').innerHTML=
+    `<div class="card"><div class="no-sel">${t('hint_tap')}</div></div>`;
+  renderCalendar();renderStats();
+}
+
+/* ══════════════════════════════════════
+   СТАРТ
+══════════════════════════════════════ */
+loadSettings();
+applyTranslations();
+renderCalendar();
+renderStats();
+</script>
+</body>
+</html>
